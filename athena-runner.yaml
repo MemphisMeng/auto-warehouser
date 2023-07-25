@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  Environment:
+    Type: String
+
+Resources:
+  # =========================================================================================
+  # AWS LAMBDA FUNCTION
+  # ========================================================================================= 
+  WaitTimerBackoff:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-Wait-Timer-Backoff-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/wait_timer_backoff/
+
+  SlackNotificationDistributer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-Slack-Notification-Distributer-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/slack_notification_distributer/
+
+  DynamoDBRenderer:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-DynamoDB-Renderer-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/dynamodb_renderer/
+      Policies:
+      - Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:Query
+          Resource: '*'
+
+  DynamoDBWriter:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-DynamoDB-Writer-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/dynamodb_writer/
+      MemorySize: 512
+      Timeout: 900
+      Policies:
+      - Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:BatchWriteItem
+          - dynamodb:UpdateItem
+          Resource: '*'
+      - Version: '2012-10-17' 
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          Resource: '*'
+
+  QueryCreator:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-Query-Creator-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/query_creator/
+
+  ECSMonitor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${Environment}-${AWS::StackName}-ECS-Monitor-Function'
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.9
+      CodeUri: lambdas/ecs_monitor/
+      Policies:
+      - Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+          - ecs:DescribeTasks
+          Resource: '*'
+
+  # =========================================================================================
+  # IAM ROLE, POLICY
+  # =========================================================================================
+  FunctionRole:
+    RoleName: !Sub '${Environment}-${AWS::StackName}-Role'
+    Description: Role for executions of lambda functions
+    AssumeRolePolicyDocument:
+      Version: 2012-10-17
+      Statement:
+        Principal:
+          Service:
+          - states.amazonaws.com
+        Action:
+          - 'sts:AssumeRole'
+    Policies:
+      - PolicyName: !Sub '${Environment}-${AWS::StackName}-Resource-Policy'
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+              - athena:getDataCatalog
+              - athena:startQueryExecution
+              - athena:getQueryExecution
+              - athena:GetQueryResults
+              Resource:
+              - arn:aws:athena:*:*:datacatalog/AwsDataCatalog
+              - arn:aws:athena:*:*:workgroup/primary
+            - Effect: Allow
+              Action:
+              - s3:CreateBucket
+              - s3:ListBucket
+              - s3:GetBucketLocation
+              - s3:GetObject
+              - s3:AbortMultipartUpload
+              - s3:ListBucketMultipartUploads
+              - s3:ListMultipartUploadParts
+              - s3:PutObject
+              - lakeformation:GetDataAccess
+              - dynamodb:BatchWriteItem
+              - dynamodb:CreateTable
+              - dynamodb:Query
+              - ecs:*
+              - ecr:*
+              - states:CreateStateMachine
+              Resource: '*'
+            - Effect: Allow
+              Action:
+              - glue:BatchCreatePartition
+              - glue:BatchDeletePartition
+              - glue:BatchDeleteTable
+              - glue:BatchGetPartition
+              - glue:CreateDatabase
+              - glue:CreatePartition
+              - glue:CreateTable
+              - glue:DeleteDatabase
+              - glue:DeletePartition
+              - glue:DeleteTable
+              - glue:GetDatabase
+              - glue:GetDatabases
+              - glue:GetPartition
+              - glue:GetPartitions
+              - glue:GetTable
+              - glue:GetTables
+              - glue:UpdateDatabase
+              - glue:UpdatePartition
+              - glue:UpdateTable
+              Resource:
+              - arn:aws:glue:*:*:catalog
+              - arn:aws:glue:*:*:database/*
+              - arn:aws:glue:*:*:table/*
+              - arn:aws:glue:*:*:userDefinedFunction/*
+      - PolicyName: !Sub '${Environment}-${AWS::StackName}-Function-Policy'
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              Resource:
+              - !GetAtt WaitTimerBackoff
+              - !GetAtt SlackNotificationDistributer
+              - !GetAtt DynamoDBRenderer
+              - !GetAtt DynamoDBWriter
+              - !GetAtt QueryCreator
+              - !GetAtt ECSMonitor
