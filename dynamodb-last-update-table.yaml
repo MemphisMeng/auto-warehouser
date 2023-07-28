@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  Environment:
+    Type: String
+
+Resources:
+  # =========================================================================================
+  # AWS DYNAMODB TABLE
+  # ========================================================================================= 
+  LastUpdateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub '${Environment}-${AWS::StackName}-Last-Update-Orchestrator-Table'
+      KeySchema:
+        - AttributeName: source_athena_table_name
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification: NEW_AND_OLD_IMAGES
