@@ -1,5 +1,5 @@
 {
-    "Comment": "A progress of the step function when it needs to create a full data table",
+    "Comment": "A progress of the step function when it needs to bring in new rows to an Athena table",
     "StartAt": "Starter",
     "States": {
       "Starter": {
@@ -11,9 +11,9 @@
             "statement": "${statement}",
             "refresh_type": "${refresh_type}"
         },
-        "Next": "CheckTableExist"
+        "Next": "CheckTableExistTask"
       },
-      "CheckTableExist": {
+      "CheckTableExistTask": {
         "Type": "Task",
         "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
         "Parameters": {
@@ -21,9 +21,9 @@
             "WorkGroup": "primary"
         },
         "ResultPath": "$.Query",
-        "Next": "CheckTableExistStatus"
+        "Next": "CheckTableExistStatusTask"
       },
-      "CheckTableExistStatus": {
+      "CheckTableExistStatusTask": {
         "Type": "Task",
         "Resource": "arn:aws:states:::athena:getQueryExecution",
         "Parameters": {
@@ -56,14 +56,14 @@
       "TableNotFoundFailure": {
         "Type": "Pass",
         "Result": "Query failed!",
-        "Next": "CreateTable"
+        "Next": "CreateTableTask"
       },
       "TableFoundState": {
         "Type": "Pass",
         "Result": "Table is found!",
-        "Next": "InsertNewRows"
+        "Next": "InsertNewRowsTask"
       },
-      "CreateTable": {
+      "CreateTableTask": {
         "Type": "Task",
         "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
         "Parameters": {
@@ -71,9 +71,9 @@
             "WorkGroup": "primary"
         },
         "ResultPath": "$.Query",
-        "Next": "CreateStatus"
+        "Next": "CreateStatusTask"
       },
-      "CreateStatus": {
+      "CreateStatusTask": {
         "Type": "Task",
         "Resource": "arn:aws:states:::athena:getQueryExecution",
         "Parameters": {
@@ -87,7 +87,7 @@
         },
         "Next": "CreateCompleteChoice"
       },
-      "InsertNewRows": {
+      "InsertNewRowsTask": {
         "Type": "Task",
         "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
         "Parameters": {
@@ -214,7 +214,7 @@
           "FunctionName": "function ARN"
         },
         "OutputPath": "$.Payload",
-        "Next": "CheckTableExistStatus"
+        "Next": "CheckTableExistStatusTask"
       }
     }
   }
