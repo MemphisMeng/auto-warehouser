@@ -16,4 +16,5 @@ Resources:
         - AttributeName: source_athena_table_name
           KeyType: HASH
       BillingMode: PAY_PER_REQUEST
-      StreamSpecification: NEW_AND_OLD_IMAGES
+      StreamSpecification: 
+        StreamViewType: NEW_AND_OLD_IMAGES

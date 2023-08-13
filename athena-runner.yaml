@@ -82,85 +82,87 @@ Resources:
   # IAM ROLE, POLICY
   # =========================================================================================
   FunctionRole:
-    RoleName: !Sub '${Environment}-${AWS::StackName}-Role'
-    Description: Role for executions of lambda functions
-    AssumeRolePolicyDocument:
-      Version: 2012-10-17
-      Statement:
-        Principal:
-          Service:
-          - states.amazonaws.com
-        Action:
-          - 'sts:AssumeRole'
-    Policies:
-      - PolicyName: !Sub '${Environment}-${AWS::StackName}-Resource-Policy'
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-              - athena:getDataCatalog
-              - athena:startQueryExecution
-              - athena:getQueryExecution
-              - athena:GetQueryResults
-              Resource:
-              - arn:aws:athena:*:*:datacatalog/AwsDataCatalog
-              - arn:aws:athena:*:*:workgroup/primary
-            - Effect: Allow
-              Action:
-              - s3:CreateBucket
-              - s3:ListBucket
-              - s3:GetBucketLocation
-              - s3:GetObject
-              - s3:AbortMultipartUpload
-              - s3:ListBucketMultipartUploads
-              - s3:ListMultipartUploadParts
-              - s3:PutObject
-              - lakeformation:GetDataAccess
-              - dynamodb:BatchWriteItem
-              - dynamodb:CreateTable
-              - dynamodb:Query
-              - ecs:*
-              - ecr:*
-              - states:CreateStateMachine
-              Resource: '*'
-            - Effect: Allow
-              Action:
-              - glue:BatchCreatePartition
-              - glue:BatchDeletePartition
-              - glue:BatchDeleteTable
-              - glue:BatchGetPartition
-              - glue:CreateDatabase
-              - glue:CreatePartition
-              - glue:CreateTable
-              - glue:DeleteDatabase
-              - glue:DeletePartition
-              - glue:DeleteTable
-              - glue:GetDatabase
-              - glue:GetDatabases
-              - glue:GetPartition
-              - glue:GetPartitions
-              - glue:GetTable
-              - glue:GetTables
-              - glue:UpdateDatabase
-              - glue:UpdatePartition
-              - glue:UpdateTable
-              Resource:
-              - arn:aws:glue:*:*:catalog
-              - arn:aws:glue:*:*:database/*
-              - arn:aws:glue:*:*:table/*
-              - arn:aws:glue:*:*:userDefinedFunction/*
-      - PolicyName: !Sub '${Environment}-${AWS::StackName}-Function-Policy'
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-              - lambda:InvokeFunction
-              Resource:
-              - !GetAtt WaitTimerBackoff
-              - !GetAtt SlackNotificationDistributer
-              - !GetAtt DynamoDBRenderer
-              - !GetAtt DynamoDBWriter
-              - !GetAtt QueryCreator
-              - !GetAtt ECSMonitor
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Environment}-${AWS::StackName}-Role'
+      Description: Role for executions of lambda functions
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Principal:
+            Service:
+            - states.amazonaws.com
+          Action:
+            - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: !Sub '${Environment}-${AWS::StackName}-Resource-Policy'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - athena:getDataCatalog
+                - athena:startQueryExecution
+                - athena:getQueryExecution
+                - athena:GetQueryResults
+                Resource:
+                - arn:aws:athena:*:*:datacatalog/AwsDataCatalog
+                - arn:aws:athena:*:*:workgroup/primary
+              - Effect: Allow
+                Action:
+                - s3:CreateBucket
+                - s3:ListBucket
+                - s3:GetBucketLocation
+                - s3:GetObject
+                - s3:AbortMultipartUpload
+                - s3:ListBucketMultipartUploads
+                - s3:ListMultipartUploadParts
+                - s3:PutObject
+                - lakeformation:GetDataAccess
+                - dynamodb:BatchWriteItem
+                - dynamodb:CreateTable
+                - dynamodb:Query
+                - ecs:*
+                - ecr:*
+                - states:CreateStateMachine
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - glue:BatchCreatePartition
+                - glue:BatchDeletePartition
+                - glue:BatchDeleteTable
+                - glue:BatchGetPartition
+                - glue:CreateDatabase
+                - glue:CreatePartition
+                - glue:CreateTable
+                - glue:DeleteDatabase
+                - glue:DeletePartition
+                - glue:DeleteTable
+                - glue:GetDatabase
+                - glue:GetDatabases
+                - glue:GetPartition
+                - glue:GetPartitions
+                - glue:GetTable
+                - glue:GetTables
+                - glue:UpdateDatabase
+                - glue:UpdatePartition
+                - glue:UpdateTable
+                Resource:
+                - arn:aws:glue:*:*:catalog
+                - arn:aws:glue:*:*:database/*
+                - arn:aws:glue:*:*:table/*
+                - arn:aws:glue:*:*:userDefinedFunction/*
+        - PolicyName: !Sub '${Environment}-${AWS::StackName}-Function-Policy'
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - lambda:InvokeFunction
+                Resource:
+                - !GetAtt WaitTimerBackoff
+                - !GetAtt SlackNotificationDistributer
+                - !GetAtt DynamoDBRenderer
+                - !GetAtt DynamoDBWriter
+                - !GetAtt QueryCreator
+                - !GetAtt ECSMonitor
