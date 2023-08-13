@@ -8,8 +8,7 @@
                 "waitSeconds": 1,
                 "database": "${database}",
                 "table": "${table}",
-                "statement": "${statement}",
-                "refresh_type": "${refresh_type}"
+                "statement": "${statement}"
             },
             "Next": "DropTableTask"
         },
