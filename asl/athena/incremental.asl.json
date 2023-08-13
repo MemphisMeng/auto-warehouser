@@ -33,7 +33,6 @@
         "ResultSelector": {
             "QueryExecutionId.$": "$.Query.QueryExecutionId",
             "Status.$": "$.QueryExecution.Status.State"
-
         },
         "Next": "QueryCompleteChoice"
       },

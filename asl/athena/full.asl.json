@@ -1,0 +1,151 @@
+{
+    "Comment": "A progress of the step function when it needs to (re)create a data table",
+    "StartAt": "Starter",
+    "States": {
+        "Starter": {
+            "Type": "Pass",
+            "Result": {
+                "waitSeconds": 1,
+                "database": "${database}",
+                "table": "${table}",
+                "statement": "${statement}",
+                "refresh_type": "${refresh_type}"
+            },
+            "Next": "DropTableTask"
+        },
+        "DropTableTask": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
+            "Parameters": {
+                "QueryString.$": "States.Format('DROP TABLE IF EXISTS {}.{}', $.database, $.table)",
+                "WorkGroup": "primary"
+            },
+            "ResultPath": "$.Query",
+            "Next": "DropTableStatusTask"
+        },
+        "DropTableStatusTask": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::athena:getQueryExecution",
+            "Parameters": {
+                "QueryExecutionId": "$.Query.QueryExecutionId"
+            },
+            "ResultPath": "$.Query",
+            "ResultSelector": {
+                "QueryExecutionId.$": "$.Query.QueryExecutionId",
+                "Status.$": "$.QueryExecution.Status.State"
+            },
+            "Next": "DropCompleteChoice"
+        },
+        "DropCompleteChoice": {
+            "Type": "Choice",
+            "Choices": [
+                {
+                    "StringEquals": "FAILED",
+                    "Variable": "$.Query.Status",
+                    "Next": "DropFailureState"
+                },
+                {
+                    "StringEquals": "SUCCEEDED",
+                    "Variable": "$.Query.Status",
+                    "Next": "DropSucceedResult"
+                }
+            ],
+            "Default": "DropWaitState"
+        },
+        "DropFailureState": {
+            "Type": "Pass",
+            "Result": "Dropping Table Failed!",
+            "End": true
+        },
+        "DropSucceedResult": {
+            "Type": "Pass",
+            "Result": "Dropping Table Succeeded!",
+            "Next": "CreateTableTask"
+        },
+        "CreateTableTask": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
+            "Parameters": {
+                "QueryString.$": "States.Format('CREATE TABLE IF NOT EXISTS {}.{} WITH (format = 'PARQUET') AS {}', $.database, $.table, $.statement)",
+                "WorkGroup": "primary"
+            },
+            "ResultPath": "$.Query",
+            "Next": "CreateStatusTask"
+        },
+        "CreateStatusTask": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::athena:getQueryExecution",
+            "Parameters": {
+                "QueryExecutionId": "$.Query.QueryExecutionId"
+            },
+            "ResultPath": "$.Query",
+            "ResultSelector": {
+                "QueryExecutionId.$": "$.Query.QueryExecutionId",
+                "Status.$": "$.QueryExecution.Status.State"
+    
+            },
+            "Next": "CreateCompleteChoice"
+        },
+        "CreateCompleteChoice": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "StringEquals": "FAILED",
+                "Variable": "$.Query.Status",
+                "Next": "CreateTableFailure"
+              },
+              {
+                "StringEquals": "SUCCEEDED",
+                "Variable": "$.Query.Status",
+                "Next": "CreateTableResult"
+              }
+            ],
+            "Default": "CreateWaitState"
+        },
+        "CreateTableFailure": {
+            "Type": "Pass",
+            "Result": "Creating Table Failed!",
+            "End": true
+        },
+        "CreateTableResult": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::athena:getQueryResults",
+            "Parameters": {
+                "QueryExecutionId": "$.Query.QueryExecutionId"
+            },
+            "ResultPath": "$.QueryResults",
+            "Next": "SuccessState"
+        },
+        "CreateWaitState": {
+            "Type": "Wait",
+            "SecondsPath": "$.waitSeconds",
+            "Next": "CreateWaitTimeBackoffState"
+        },
+        "SuccessState": {
+            "Type": "Succeed"
+        },
+        "CreateWaitTimeBackoffState": {
+            "Type": "Task",
+            "Resource": "${backoff_function}",
+            "Parameters": {
+              "FunctionName": "function ARN"
+            },
+            "OutputPath": "$.Payload",
+            "Next": "CreateTableResult"
+        },
+        "DropWaitState": {
+            "Type": "Wait",
+            "SecondsPath": "$.waitSeconds",
+            "Next": "DropWaitTimeBackoffState"
+        },
+        "DropWaitTimeBackoffState": {
+            "Type": "Task",
+            "Resource": "${backoff_function}",
+            "Parameters": {
+              "FunctionName": "function ARN"
+            },
+            "OutputPath": "$.Payload",
+            "Next": "DropTableStatusTask"
+        }
+    }
+}
