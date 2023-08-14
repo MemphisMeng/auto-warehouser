@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  Environment:
+    Type: String
+  Database:
+    Type: String
+  Table:
+    Type: String
+  OutputType:
+    Type: String
+    Default: athena
+  RefreshType:
+    Type: String
+    Default: full
+    AllowedValues:
+      - full
+      - incremental
+      - view
+  Statement:
+    Description: the query statement (usually DQL) to collect a subset of data for the data table/view creation
+    Type: String
+Mappings:
+
+Resources:
+  # =========================================================================================
+  # AWS LAMBDA FUNCTION
+  # ========================================================================================= 
+  DynamoDBStepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: !Sub '${Environment}-${Database}.${Table}-statemachine'
+      DefinitionString: !FindInMap [DefinitionMap, !Ref RefreshType, definition]
+      DefinitionSubstitutions:
+        database: !Ref Database
+        table: !Ref Table
+        statement: !Ref Statement
+        backoff_function: !GetAtt function.Arn
+      RoleArn: ''
