@@ -1,5 +1,5 @@
 {
-    "Comment": "A progress of the step function when it is designed to write new records into DynamoDB Table without any transformation",
+    "Comment": "A progress of the step function when it is designed to write new records into DynamoDB Table with necessary transformation",
     "StartAt": "Starter",
     "States": {
         "Starter": {
@@ -63,6 +63,12 @@
         "QuerySucceedResult": {
             "Type": "Pass",
             "Result": "Dropping Table Succeeded!",
+            "Next": "TransformTask"
+        },
+        "TransformTask": {
+            "Type": "Task",
+            "Resource": "${transform_function}",
+            "OutputPath": "$.Payload",
             "Next": "WriteTask"
         },
         "WriteTask": {
