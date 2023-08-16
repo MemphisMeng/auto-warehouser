@@ -3,10 +3,7 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import textwrap
 
-
-
 def lambda_handler(event, context):
-    print(event)
     source_athena_table_name=f"{event['database']}.{event['table']}"
     dynamodb = boto3.resource('dynamodb')
     last_update_time_table = dynamodb.Table(f"dynamodb-etl-orchestrator-last-update-time-{event['env']}")
