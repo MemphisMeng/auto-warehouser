@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Parameters:
+  Environment:
+    Type: String
+
+Resources:
+  # =========================================================================================
+  # IAM ROLE, POLICY
+  # =========================================================================================
+  IamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${Environment}-${AWS::StackName}-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+            - athena.amazonaws.com
+            - s3.amazonaws.com
+            - states.amazonaws.com
+            - dynamodb.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: '/'
+  
+  # =========================================================================================
+  # AWS DynamoDB TABLE
+  # ========================================================================================= 
+  ExecutionRecordTable: 
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    Properties:
+      BillingMode: PAY_PER_REQUEST 
+      AttributeDefinitions: 
+        - 
+          AttributeName: "source_table"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "source_table"
+          KeyType: "HASH"
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      TableName: !Sub execution-records-${Environment}
