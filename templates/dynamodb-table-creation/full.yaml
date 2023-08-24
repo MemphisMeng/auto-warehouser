@@ -36,12 +36,16 @@ Resources:
         - AttributeName: !Ref SortKey
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: !Sub '${TableName}-${Environment}-GSI'
+        - IndexName: !Sub '${TableName}-${Environment}-${GSI}-GSI'
           KeySchema:
             - AttributeName: !Ref GSI
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL
       LocalSecondaryIndexes:
-        - IndexName: !Sub '${TableName}-${Environment}-LSI'
+        - IndexName: !Sub '${TableName}-${Environment}-!{LSI}-LSI'
           KeySchema:
             - AttributeName: !Ref LSI
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL
