@@ -28,7 +28,9 @@ Resources:
         - AttributeName: !Ref PartitionKey
           KeyType: HASH
       GlobalSecondaryIndexes:
-        - IndexName: !Sub '${TableName}-${Environment}-GSI'
+        - IndexName: !Sub '${TableName}-${Environment}-${GSI}-GSI'
           KeySchema:
             - AttributeName: !Ref GSI
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL

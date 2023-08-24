@@ -28,7 +28,9 @@ Resources:
         - AttributeName: !Ref PartitionKey
           KeyType: HASH
       LocalSecondaryIndexes:
-        - IndexName: !Sub '${TableName}-${Environment}-LSI'
+        - IndexName: !Sub '${TableName}-${Environment}-${LSI}-LSI'
           KeySchema:
             - AttributeName: !Ref LSI
               KeyType: HASH
+          Projection:
+            ProjectionType: ALL
